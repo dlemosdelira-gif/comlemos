@@ -29,7 +29,7 @@
     z-index: 10;
     background: var(--primary);
     color: white;
-    padding: 16px 20px;
+    padding: 16px 20px 14px 20px;
   }
   header h1 {
     margin: 0 0 12px 0;
@@ -38,7 +38,6 @@
   nav.tabs {
     display: flex;
     gap: 8px;
-    margin: -4px 0 12px 0;
   }
   nav.tabs a {
     flex: 1;
@@ -55,6 +54,11 @@
     background: white;
     color: var(--primary);
   }
+  .toolbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+  }
   .search-row {
     display: flex;
     gap: 10px;
@@ -63,7 +67,9 @@
     flex: 1;
     padding: 14px 16px;
     border-radius: 10px;
-    border: none;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
     font-size: 17px;
   }
   main {
@@ -125,6 +131,17 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .client-last {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .client-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
   .client-saldo {
     font-size: 18px;
     font-weight: 800;
@@ -132,6 +149,16 @@
   }
   .client-saldo.zero { color: var(--muted); font-weight: 600; font-size: 15px; }
   .client-saldo.devendo { color: var(--danger); }
+  .client-quickadd {
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
   .fab {
     position: fixed;
     right: 20px;
@@ -321,10 +348,13 @@
     <a href="caixa.html">Caixa</a>
     <a href="fiado.html" class="active">Fiado</a>
   </nav>
+</header>
+
+<div class="toolbar">
   <div class="search-row">
     <input id="search" type="text" placeholder="Buscar cliente..." autocomplete="off">
   </div>
-</header>
+</div>
 
 <main>
   <div class="summary-card">
@@ -393,8 +423,8 @@
     </div>
   </div>
   <div class="detail-actions">
-    <button class="btn btn-danger" id="btnNovaCompra">+ Compra</button>
-    <button class="btn btn-good" id="btnNovoPagamento">+ Pagamento</button>
+    <button class="btn btn-danger" id="btnNovaCompra">+ Valor a receber</button>
+    <button class="btn btn-good" id="btnNovoPagamento">+ Pagamento recebido</button>
   </div>
   <div class="detail-list">
     <div class="section-title">Histórico</div>
@@ -476,6 +506,12 @@ function saldoDoCliente(clienteId) {
     .reduce((s, m) => s + (m.tipo === 'compra' ? m.valor : -m.valor), 0);
 }
 
+function ultimaMovData(clienteId) {
+  const clientMovs = movs.filter(m => m.clienteId === clienteId);
+  if (!clientMovs.length) return null;
+  return clientMovs.reduce((max, m) => (m.data > max ? m.data : max), clientMovs[0].data);
+}
+
 function renderList() {
   const term = searchTerm.trim().toLowerCase();
   const filtered = clients
@@ -491,15 +527,24 @@ function renderList() {
 
   filtered.forEach(c => {
     const saldoClass = c.saldo > 0 ? 'devendo' : 'zero';
+    const ultima = ultimaMovData(c.id);
     const div = document.createElement('div');
     div.className = 'client';
     div.innerHTML = `
       <div class="client-info">
         <p class="client-name">${c.nome}</p>
         <p class="client-addr">${c.endereco || ''}</p>
+        <p class="client-last">${ultima ? 'Última venda: ' + formatDateBR(ultima) : 'Sem movimentação'}</p>
       </div>
-      <span class="client-saldo ${saldoClass}">${formatMoney(c.saldo)}</span>
+      <div class="client-right">
+        <span class="client-saldo ${saldoClass}">${formatMoney(c.saldo)}</span>
+        <button class="client-quickadd" data-quickadd="${c.id}">+ Valor</button>
+      </div>
     `;
+    div.querySelector('[data-quickadd]').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openMovSheetFor(c.id, 'compra');
+    });
     div.addEventListener('click', () => openDetail(c.id));
     listEl.appendChild(div);
   });
@@ -591,10 +636,15 @@ function renderDetail() {
 // --- Add movement ---
 function openMovSheet(tipo) {
   currentMovTipo = tipo;
-  movSheetTitle.textContent = tipo === 'compra' ? 'Lançar compra fiado' : 'Lançar pagamento';
+  movSheetTitle.textContent = tipo === 'compra' ? 'Lançar valor a receber (venda fiado)' : 'Lançar pagamento recebido';
   fMovData.value = todayISO();
   fMovValor.value = '';
   backdropMov.classList.add('open');
+  setTimeout(() => fMovValor.focus(), 200);
+}
+function openMovSheetFor(clientId, tipo) {
+  currentClientId = clientId;
+  openMovSheet(tipo);
 }
 function closeMovSheet() {
   backdropMov.classList.remove('open');
@@ -614,13 +664,15 @@ function saveMov() {
   });
   saveMovs(movs);
   closeMovSheet();
-  renderDetail();
+  renderList();
+  if (detailOverlay.classList.contains('open')) renderDetail();
 }
 function deleteMov(id) {
   if (!confirm('Excluir esta movimentação?')) return;
   movs = movs.filter(m => m.id !== id);
   saveMovs(movs);
   renderDetail();
+  renderList();
 }
 function deleteClient() {
   if (!confirm('Excluir este cliente e todo o histórico dele?')) return;

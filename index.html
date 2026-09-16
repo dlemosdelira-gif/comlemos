@@ -29,7 +29,7 @@
     z-index: 10;
     background: var(--primary);
     color: white;
-    padding: 16px 20px;
+    padding: 16px 20px 14px 20px;
   }
   header h1 {
     margin: 0 0 12px 0;
@@ -38,7 +38,6 @@
   nav.tabs {
     display: flex;
     gap: 8px;
-    margin: -4px 0 12px 0;
   }
   nav.tabs a {
     flex: 1;
@@ -55,6 +54,11 @@
     background: white;
     color: var(--primary);
   }
+  .toolbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+  }
   .search-row {
     display: flex;
     gap: 10px;
@@ -63,23 +67,16 @@
     flex: 1;
     padding: 14px 16px;
     border-radius: 10px;
-    border: none;
-    font-size: 17px;
-  }
-  .search-row button {
-    padding: 14px 18px;
-    border-radius: 10px;
-    border: none;
-    background: white;
-    color: var(--primary);
-    font-weight: 700;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
     font-size: 17px;
   }
   .cats {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding: 12px 16px 0 16px;
+    padding-top: 12px;
     -webkit-overflow-scrolling: touch;
   }
   .cats::-webkit-scrollbar { display: none; }
@@ -87,7 +84,7 @@
     flex: none;
     padding: 10px 16px;
     border-radius: 999px;
-    background: var(--card);
+    background: var(--bg);
     border: 1px solid var(--border);
     font-size: 15px;
     font-weight: 600;
@@ -144,7 +141,8 @@
   }
   .product-prices {
     display: flex;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 4px 16px;
     font-size: 14px;
     color: var(--muted);
   }
@@ -276,11 +274,14 @@
     <a href="caixa.html">Caixa</a>
     <a href="fiado.html">Fiado</a>
   </nav>
+</header>
+
+<div class="toolbar">
   <div class="search-row">
     <input id="search" type="text" placeholder="Buscar produto..." autocomplete="off">
   </div>
   <div class="cats" id="cats"></div>
-</header>
+</div>
 
 <main>
   <div id="list"></div>
@@ -402,8 +403,8 @@ function renderList() {
   filtered.forEach(p => {
     const m = computeMargin(p.custo, p.venda);
     const marginHtml = m
-      ? `<span class="margin ${m.pct >= 25 ? 'good' : 'low'}">${m.pct.toFixed(0)}%</span>`
-      : '<span class="margin">—</span>';
+      ? `<span>Lucro <b>${formatMoney(m.diff)}</b></span><span class="margin ${m.pct >= 25 ? 'good' : 'low'}">${m.pct.toFixed(0)}%</span>`
+      : '<span class="margin">Lucro —</span>';
 
     const div = document.createElement('div');
     div.className = 'product';
@@ -429,11 +430,11 @@ function renderList() {
 function updateMarginPreview() {
   const m = computeMargin(fCusto.value, fVenda.value);
   if (!m) {
-    marginPreview.textContent = 'Margem: —';
+    marginPreview.textContent = 'Lucro: — · Margem: —';
     return;
   }
   marginPreview.textContent =
-    `Margem: ${formatMoney(m.diff)} (${m.pct.toFixed(1)}%)`;
+    `Lucro: ${formatMoney(m.diff)} · Margem: ${m.pct.toFixed(1)}%`;
 }
 
 function openSheet(id) {
