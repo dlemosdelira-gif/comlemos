@@ -439,24 +439,15 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script>
-const CLIENTS_KEY = 'loja_fiado_clientes_v1';
-const MOVS_KEY = 'loja_fiado_movimentos_v1';
+const clientsCol = db.collection('fiado_clientes');
+const movsCol = db.collection('fiado_movimentos');
 
-function loadClients() {
-  try { return JSON.parse(localStorage.getItem(CLIENTS_KEY)) || []; }
-  catch (e) { return []; }
-}
-function saveClients(v) { localStorage.setItem(CLIENTS_KEY, JSON.stringify(v)); }
-
-function loadMovs() {
-  try { return JSON.parse(localStorage.getItem(MOVS_KEY)) || []; }
-  catch (e) { return []; }
-}
-function saveMovs(v) { localStorage.setItem(MOVS_KEY, JSON.stringify(v)); }
-
-let clients = loadClients();
-let movs = loadMovs();
+let clients = [];
+let movs = [];
 let searchTerm = '';
 let editingClientId = null;
 let currentClientId = null;
@@ -581,15 +572,11 @@ function saveClient() {
     telefone: fTelefone.value.trim(),
   };
   if (editingClientId) {
-    const idx = clients.findIndex(c => c.id === editingClientId);
-    clients[idx] = { ...clients[idx], ...data };
+    clientsCol.doc(editingClientId).set(data, { merge: true });
   } else {
-    clients.push({ id: Date.now().toString(36), ...data });
+    clientsCol.add(data);
   }
-  saveClients(clients);
   closeClientSheet();
-  renderList();
-  if (currentClientId) renderDetail();
 }
 
 // --- Client detail ---
@@ -655,32 +642,26 @@ function saveMov() {
     fMovValor.focus();
     return;
   }
-  movs.push({
-    id: Date.now().toString(36),
+  movsCol.add({
     clienteId: currentClientId,
     tipo: currentMovTipo,
     data: fMovData.value,
     valor,
   });
-  saveMovs(movs);
   closeMovSheet();
-  renderList();
-  if (detailOverlay.classList.contains('open')) renderDetail();
 }
 function deleteMov(id) {
   if (!confirm('Excluir esta movimentação?')) return;
-  movs = movs.filter(m => m.id !== id);
-  saveMovs(movs);
-  renderDetail();
-  renderList();
+  movsCol.doc(id).delete();
 }
-function deleteClient() {
+async function deleteClient() {
   if (!confirm('Excluir este cliente e todo o histórico dele?')) return;
   const id = currentClientId;
-  clients = clients.filter(c => c.id !== id);
-  movs = movs.filter(m => m.clienteId !== id);
-  saveClients(clients);
-  saveMovs(movs);
+  const toDelete = await movsCol.where('clienteId', '==', id).get();
+  const batch = db.batch();
+  toDelete.forEach(doc => batch.delete(doc.ref));
+  batch.delete(clientsCol.doc(id));
+  await batch.commit();
   closeDetail();
 }
 
@@ -705,6 +686,18 @@ searchEl.addEventListener('input', (e) => {
 });
 
 renderList();
+
+clientsCol.onSnapshot(snapshot => {
+  clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  renderList();
+  if (detailOverlay.classList.contains('open')) renderDetail();
+});
+
+movsCol.onSnapshot(snapshot => {
+  movs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  renderList();
+  if (detailOverlay.classList.contains('open')) renderDetail();
+});
 </script>
 </body>
 </html>

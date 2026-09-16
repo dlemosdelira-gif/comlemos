@@ -287,23 +287,13 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script>
-const STORAGE_KEY = 'loja_caixa_v1';
+const caixaCol = db.collection('caixa');
 
-function loadDays() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveDays(days) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(days));
-}
-
-let days = loadDays();
+let days = [];
 let editingId = null;
 
 const summaryEl = document.getElementById('summary');
@@ -452,32 +442,24 @@ function saveDay() {
     retiradas: parseFloat(fRetiradas.value) || 0,
     despesas: parseFloat(fDespesas.value) || 0,
   };
-  if (editingId) {
-    const idx = days.findIndex(d => d.id === editingId);
-    days[idx] = { ...days[idx], ...data };
-  } else {
-    const existing = days.find(d => d.data === data.data);
+  const newId = data.data;
+  if (!editingId) {
+    const existing = days.find(d => d.data === newId);
     if (existing && !confirm('Já existe um lançamento para essa data. Substituir?')) {
       return;
     }
-    if (existing) {
-      Object.assign(existing, data);
-    } else {
-      days.push({ id: Date.now().toString(36), ...data });
-    }
+  } else if (editingId !== newId) {
+    caixaCol.doc(editingId).delete();
   }
-  saveDays(days);
+  caixaCol.doc(newId).set(data);
   closeSheet();
-  render();
 }
 
 function deleteDay() {
   if (!editingId) return;
   if (!confirm('Excluir este lançamento?')) return;
-  days = days.filter(d => d.id !== editingId);
-  saveDays(days);
+  caixaCol.doc(editingId).delete();
   closeSheet();
-  render();
 }
 
 document.getElementById('btnAdd').addEventListener('click', () => openSheet(null));
@@ -490,6 +472,11 @@ backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeShee
 );
 
 render();
+
+caixaCol.onSnapshot(snapshot => {
+  days = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  render();
+});
 </script>
 </body>
 </html>

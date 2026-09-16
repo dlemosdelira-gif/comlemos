@@ -324,24 +324,14 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script>
-const STORAGE_KEY = 'loja_produtos_v1';
 const CATEGORIES = ['Bebidas', 'Doces', 'Salgados', 'Cigarros', 'Mercearia', 'Outros'];
+const productsCol = db.collection('produtos');
 
-function loadProducts() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveProducts(products) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-}
-
-let products = loadProducts();
+let products = [];
 let activeCategory = 'Todas';
 let searchTerm = '';
 let editingId = null;
@@ -478,23 +468,18 @@ function saveProduct() {
     venda: parseFloat(fVenda.value) || 0,
   };
   if (editingId) {
-    const idx = products.findIndex(p => p.id === editingId);
-    products[idx] = { ...products[idx], ...data };
+    productsCol.doc(editingId).set(data);
   } else {
-    products.push({ id: Date.now().toString(36), ...data });
+    productsCol.add(data);
   }
-  saveProducts(products);
   closeSheet();
-  renderList();
 }
 
 function deleteProduct() {
   if (!editingId) return;
   if (!confirm('Excluir este produto?')) return;
-  products = products.filter(p => p.id !== editingId);
-  saveProducts(products);
+  productsCol.doc(editingId).delete();
   closeSheet();
-  renderList();
 }
 
 document.getElementById('btnAdd').addEventListener('click', () => openSheet(null));
@@ -512,6 +497,11 @@ searchEl.addEventListener('input', (e) => {
 fillCategorySelect();
 renderCategoryChips();
 renderList();
+
+productsCol.onSnapshot(snapshot => {
+  products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  renderList();
+});
 </script>
 </body>
 </html>
