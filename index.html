@@ -35,6 +35,26 @@
     margin: 0 0 12px 0;
     font-size: 22px;
   }
+  nav.tabs {
+    display: flex;
+    gap: 8px;
+    margin: -4px 0 12px 0;
+  }
+  nav.tabs a {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  nav.tabs a.active {
+    background: white;
+    color: var(--primary);
+  }
   .search-row {
     display: flex;
     gap: 10px;
@@ -251,6 +271,10 @@
 
 <header>
   <h1>Produtos &amp; Preços</h1>
+  <nav class="tabs">
+    <a href="index.html" class="active">Produtos</a>
+    <a href="caixa.html">Caixa</a>
+  </nav>
   <div class="search-row">
     <input id="search" type="text" placeholder="Buscar produto..." autocomplete="off">
   </div>

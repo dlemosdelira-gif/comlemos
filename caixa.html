@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Caixa Diário</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1c1e21;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --good: #16a34a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--primary);
+    color: white;
+    padding: 16px 20px;
+  }
+  header h1 {
+    margin: 0 0 12px 0;
+    font-size: 22px;
+  }
+  nav.tabs {
+    display: flex;
+    gap: 8px;
+    margin: -4px 0 12px 0;
+  }
+  nav.tabs a {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  nav.tabs a.active {
+    background: white;
+    color: var(--primary);
+  }
+  main {
+    padding: 16px;
+    padding-bottom: 100px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .summary-card .label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .summary-card .value {
+    font-size: 19px;
+    font-weight: 700;
+  }
+  .summary-card .value.positive { color: var(--good); }
+  .summary-card .value.negative { color: var(--danger); }
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    margin-top: 60px;
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  .day {
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .day-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .day-date {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .day-result {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .day-result.positive { color: var(--good); }
+  .day-result.negative { color: var(--danger); }
+  .day-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .day-grid b { color: var(--text); }
+  .icon-btn {
+    border: none;
+    background: var(--bg);
+    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fab {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-size: 30px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .sheet-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 30;
+  }
+  .sheet-backdrop.open { display: block; }
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    max-width: 720px;
+    margin: 0 auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.2s ease-out;
+    z-index: 31;
+  }
+  .sheet-backdrop.open .sheet {
+    transform: translateY(0);
+  }
+  .sheet h2 {
+    margin-top: 0;
+    font-size: 20px;
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    padding: 14px;
+    font-size: 17px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .row-2 {
+    display: flex;
+    gap: 12px;
+  }
+  .row-2 .field { flex: 1; }
+  .result-preview {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+  .sheet-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .btn {
+    flex: 1;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-secondary { background: var(--bg); color: var(--text); }
+  .btn-danger { background: #fee2e2; color: var(--danger); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Caixa Diário</h1>
+  <nav class="tabs">
+    <a href="index.html">Produtos</a>
+    <a href="caixa.html" class="active">Caixa</a>
+  </nav>
+</header>
+
+<main>
+  <div class="summary" id="summary"></div>
+  <div id="list"></div>
+  <div id="empty" class="empty" style="display:none">
+    Nenhum fechamento registrado ainda.<br>Toque no botão + para lançar o dia.
+  </div>
+</main>
+
+<button class="fab" id="btnAdd">+</button>
+
+<div class="sheet-backdrop" id="backdrop">
+  <div class="sheet">
+    <h2 id="sheetTitle">Fechamento do dia</h2>
+    <div class="field">
+      <label>Data</label>
+      <input id="fData" type="date">
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Venda na loja (R$)</label>
+        <input id="fVendaLoja" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Venda na rua/entregas (R$)</label>
+        <input id="fVendaRua" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+      </div>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Retiradas (R$)</label>
+        <input id="fRetiradas" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Despesas (R$)</label>
+        <input id="fDespesas" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+      </div>
+    </div>
+    <div class="result-preview" id="resultPreview">Resultado do dia: —</div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="btnCancel">Cancelar</button>
+      <button class="btn btn-primary" id="btnSave">Salvar</button>
+    </div>
+    <div class="sheet-actions" id="deleteRow" style="display:none">
+      <button class="btn btn-danger" id="btnDelete">Excluir lançamento</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'loja_caixa_v1';
+
+function loadDays() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveDays(days) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(days));
+}
+
+let days = loadDays();
+let editingId = null;
+
+const summaryEl = document.getElementById('summary');
+const listEl = document.getElementById('list');
+const emptyEl = document.getElementById('empty');
+const backdrop = document.getElementById('backdrop');
+const fData = document.getElementById('fData');
+const fVendaLoja = document.getElementById('fVendaLoja');
+const fVendaRua = document.getElementById('fVendaRua');
+const fRetiradas = document.getElementById('fRetiradas');
+const fDespesas = document.getElementById('fDespesas');
+const resultPreview = document.getElementById('resultPreview');
+const sheetTitle = document.getElementById('sheetTitle');
+const deleteRow = document.getElementById('deleteRow');
+
+function formatMoney(v) {
+  const n = Number(v || 0);
+  const sign = n < 0 ? '-' : '';
+  return sign + 'R$ ' + Math.abs(n).toFixed(2).replace('.', ',');
+}
+
+function formatDateBR(iso) {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function computeResult(d) {
+  const entradas = (Number(d.vendaLoja) || 0) + (Number(d.vendaRua) || 0);
+  const saidas = (Number(d.retiradas) || 0) + (Number(d.despesas) || 0);
+  return entradas - saidas;
+}
+
+function renderSummary() {
+  const sorted = [...days].sort((a, b) => a.data.localeCompare(b.data));
+  const totalLoja = sorted.reduce((s, d) => s + (Number(d.vendaLoja) || 0), 0);
+  const totalRua = sorted.reduce((s, d) => s + (Number(d.vendaRua) || 0), 0);
+  const totalDespesas = sorted.reduce((s, d) => s + (Number(d.retiradas) || 0) + (Number(d.despesas) || 0), 0);
+  const saldoAcumulado = sorted.reduce((s, d) => s + computeResult(d), 0);
+
+  summaryEl.innerHTML = `
+    <div class="summary-card">
+      <div class="label">Vendas loja</div>
+      <div class="value">${formatMoney(totalLoja)}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Vendas rua/entregas</div>
+      <div class="value">${formatMoney(totalRua)}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Retiradas + despesas</div>
+      <div class="value">${formatMoney(totalDespesas)}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Saldo acumulado</div>
+      <div class="value ${saldoAcumulado >= 0 ? 'positive' : 'negative'}">${formatMoney(saldoAcumulado)}</div>
+    </div>
+  `;
+}
+
+function renderList() {
+  const sorted = [...days].sort((a, b) => b.data.localeCompare(a.data));
+  listEl.innerHTML = '';
+  emptyEl.style.display = sorted.length ? 'none' : 'block';
+
+  sorted.forEach(d => {
+    const result = computeResult(d);
+    const div = document.createElement('div');
+    div.className = 'day';
+    div.innerHTML = `
+      <div class="day-top">
+        <span class="day-date">${formatDateBR(d.data)}</span>
+        <span class="day-result ${result >= 0 ? 'positive' : 'negative'}">${formatMoney(result)}</span>
+        <button class="icon-btn" data-edit="${d.id}">✎</button>
+      </div>
+      <div class="day-grid">
+        <span>Venda loja: <b>${formatMoney(d.vendaLoja)}</b></span>
+        <span>Venda rua: <b>${formatMoney(d.vendaRua)}</b></span>
+        <span>Retiradas: <b>${formatMoney(d.retiradas)}</b></span>
+        <span>Despesas: <b>${formatMoney(d.despesas)}</b></span>
+      </div>
+    `;
+    div.querySelector('[data-edit]').addEventListener('click', () => openSheet(d.id));
+    listEl.appendChild(div);
+  });
+}
+
+function render() {
+  renderSummary();
+  renderList();
+}
+
+function updateResultPreview() {
+  const result = computeResult({
+    vendaLoja: fVendaLoja.value,
+    vendaRua: fVendaRua.value,
+    retiradas: fRetiradas.value,
+    despesas: fDespesas.value,
+  });
+  resultPreview.textContent = `Resultado do dia: ${formatMoney(result)}`;
+}
+
+function todayISO() {
+  const now = new Date();
+  const tz = now.getTimezoneOffset() * 60000;
+  return new Date(now - tz).toISOString().slice(0, 10);
+}
+
+function openSheet(id) {
+  editingId = id || null;
+  if (editingId) {
+    const d = days.find(x => x.id === editingId);
+    sheetTitle.textContent = 'Editar fechamento';
+    fData.value = d.data;
+    fVendaLoja.value = d.vendaLoja;
+    fVendaRua.value = d.vendaRua;
+    fRetiradas.value = d.retiradas;
+    fDespesas.value = d.despesas;
+    deleteRow.style.display = 'flex';
+  } else {
+    sheetTitle.textContent = 'Fechamento do dia';
+    fData.value = todayISO();
+    fVendaLoja.value = '';
+    fVendaRua.value = '';
+    fRetiradas.value = '';
+    fDespesas.value = '';
+    deleteRow.style.display = 'none';
+  }
+  updateResultPreview();
+  backdrop.classList.add('open');
+}
+
+function closeSheet() {
+  backdrop.classList.remove('open');
+  editingId = null;
+}
+
+function saveDay() {
+  if (!fData.value) {
+    fData.focus();
+    return;
+  }
+  const data = {
+    data: fData.value,
+    vendaLoja: parseFloat(fVendaLoja.value) || 0,
+    vendaRua: parseFloat(fVendaRua.value) || 0,
+    retiradas: parseFloat(fRetiradas.value) || 0,
+    despesas: parseFloat(fDespesas.value) || 0,
+  };
+  if (editingId) {
+    const idx = days.findIndex(d => d.id === editingId);
+    days[idx] = { ...days[idx], ...data };
+  } else {
+    const existing = days.find(d => d.data === data.data);
+    if (existing && !confirm('Já existe um lançamento para essa data. Substituir?')) {
+      return;
+    }
+    if (existing) {
+      Object.assign(existing, data);
+    } else {
+      days.push({ id: Date.now().toString(36), ...data });
+    }
+  }
+  saveDays(days);
+  closeSheet();
+  render();
+}
+
+function deleteDay() {
+  if (!editingId) return;
+  if (!confirm('Excluir este lançamento?')) return;
+  days = days.filter(d => d.id !== editingId);
+  saveDays(days);
+  closeSheet();
+  render();
+}
+
+document.getElementById('btnAdd').addEventListener('click', () => openSheet(null));
+document.getElementById('btnCancel').addEventListener('click', closeSheet);
+document.getElementById('btnSave').addEventListener('click', saveDay);
+document.getElementById('btnDelete').addEventListener('click', deleteDay);
+backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeSheet(); });
+[fVendaLoja, fVendaRua, fRetiradas, fDespesas].forEach(el =>
+  el.addEventListener('input', updateResultPreview)
+);
+
+render();
+</script>
+</body>
+</html>
