@@ -20,8 +20,20 @@ App simples para o controle do negócio (loja + distribuição para bares/mercad
 - Resumo com totais de vendas loja/rua, despesas e saldo acumulado do período
 - Um lançamento por data (editar substitui o do dia), dados salvos no navegador (offline)
 
-Para usar, basta abrir `index.html` ou `caixa.html` no navegador do tablet (ou publicar como página estática) — há navegação entre as duas telas no topo.
+## Módulo atual: Fiado
+
+`fiado.html` controla as vendas a prazo para bares/mercadinhos:
+
+- Cadastro de cliente (nome, endereço, telefone)
+- Lançamento de "compra fiado" (aumenta a dívida) e "pagamento" (reduz a dívida)
+- Saldo devedor calculado automaticamente por cliente, lista ordenada por quem deve mais
+- Histórico completo de movimentações por cliente
+- Card com o total a receber de todos os clientes
+- Dados salvos no navegador (offline)
+
+Para usar, basta abrir `index.html`, `caixa.html` ou `fiado.html` no navegador do tablet (ou publicar como página estática) — há navegação entre as três telas no topo.
 
 ## Próximos módulos planejados
 
-- Controle de fiado por cliente (bares/mercadinhos)
+- Contas a pagar / fornecedores
+- Relatório mensal consolidado

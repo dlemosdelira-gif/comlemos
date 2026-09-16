@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Fiado</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1c1e21;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --good: #16a34a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--primary);
+    color: white;
+    padding: 16px 20px;
+  }
+  header h1 {
+    margin: 0 0 12px 0;
+    font-size: 22px;
+  }
+  nav.tabs {
+    display: flex;
+    gap: 8px;
+    margin: -4px 0 12px 0;
+  }
+  nav.tabs a {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  nav.tabs a.active {
+    background: white;
+    color: var(--primary);
+  }
+  .search-row {
+    display: flex;
+    gap: 10px;
+  }
+  .search-row input {
+    flex: 1;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: none;
+    font-size: 17px;
+  }
+  main {
+    padding: 16px;
+    padding-bottom: 100px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .summary-card .label {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .summary-card .value {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--danger);
+  }
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    margin-top: 60px;
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  .client {
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .client-info { flex: 1; min-width: 0; }
+  .client-name {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .client-addr {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .client-saldo {
+    font-size: 18px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .client-saldo.zero { color: var(--muted); font-weight: 600; font-size: 15px; }
+  .client-saldo.devendo { color: var(--danger); }
+  .fab {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-size: 30px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .sheet-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 30;
+  }
+  .sheet-backdrop.open { display: block; }
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    max-width: 720px;
+    margin: 0 auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.2s ease-out;
+    z-index: 31;
+  }
+  .sheet-backdrop.open .sheet {
+    transform: translateY(0);
+  }
+  .sheet h2 {
+    margin-top: 0;
+    font-size: 20px;
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 14px;
+    font-size: 17px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .sheet-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .btn {
+    flex: 1;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-secondary { background: var(--bg); color: var(--text); }
+  .btn-danger { background: #fee2e2; color: var(--danger); }
+  .btn-good { background: #dcfce7; color: var(--good); }
+
+  /* Client detail overlay */
+  .detail-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 40;
+    overflow-y: auto;
+  }
+  .detail-overlay.open { display: block; }
+  .detail-header {
+    background: var(--primary);
+    color: white;
+    padding: 16px 20px 20px 20px;
+    position: sticky;
+    top: 0;
+  }
+  .detail-back {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 0;
+    margin-bottom: 10px;
+  }
+  .detail-name {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 2px 0;
+  }
+  .detail-addr {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+  }
+  .detail-saldo-box {
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .detail-saldo-box .label { font-size: 12px; opacity: 0.85; margin-bottom: 4px; }
+  .detail-saldo-box .value { font-size: 24px; font-weight: 800; }
+  .detail-actions {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .detail-list {
+    padding: 0 16px 100px 16px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .mov {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mov-info .mov-tipo {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .mov-info .mov-data {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .mov-valor {
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .mov-valor.compra { color: var(--danger); }
+  .mov-valor.pagamento { color: var(--good); }
+  .mov-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    padding: 4px 8px;
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    margin: 18px 0 10px 0;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fiado</h1>
+  <nav class="tabs">
+    <a href="index.html">Produtos</a>
+    <a href="caixa.html">Caixa</a>
+    <a href="fiado.html" class="active">Fiado</a>
+  </nav>
+  <div class="search-row">
+    <input id="search" type="text" placeholder="Buscar cliente..." autocomplete="off">
+  </div>
+</header>
+
+<main>
+  <div class="summary-card">
+    <div class="label">Total a receber</div>
+    <div class="value" id="totalReceber">R$ 0,00</div>
+  </div>
+  <div id="list"></div>
+  <div id="empty" class="empty" style="display:none">
+    Nenhum cliente cadastrado.<br>Toque no botão + para adicionar um bar/mercadinho.
+  </div>
+</main>
+
+<button class="fab" id="btnAdd">+</button>
+
+<!-- Add/edit client sheet -->
+<div class="sheet-backdrop" id="backdropClient">
+  <div class="sheet">
+    <h2 id="clientSheetTitle">Novo cliente</h2>
+    <div class="field">
+      <label>Nome do bar/mercadinho</label>
+      <input id="fNome" type="text" placeholder="Ex: Bar do Zé">
+    </div>
+    <div class="field">
+      <label>Endereço</label>
+      <input id="fEndereco" type="text" placeholder="Ex: Rua Mendes da Rocha, 123">
+    </div>
+    <div class="field">
+      <label>Telefone (opcional)</label>
+      <input id="fTelefone" type="text" placeholder="(11) 90000-0000">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="btnCancelClient">Cancelar</button>
+      <button class="btn btn-primary" id="btnSaveClient">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add movement sheet -->
+<div class="sheet-backdrop" id="backdropMov">
+  <div class="sheet">
+    <h2 id="movSheetTitle">Lançar compra</h2>
+    <div class="field">
+      <label>Data</label>
+      <input id="fMovData" type="date">
+    </div>
+    <div class="field">
+      <label>Valor (R$)</label>
+      <input id="fMovValor" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="btnCancelMov">Cancelar</button>
+      <button class="btn btn-primary" id="btnSaveMov">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Client detail overlay -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-header">
+    <button class="detail-back" id="btnBack">&larr; Voltar</button>
+    <p class="detail-name" id="detailName"></p>
+    <p class="detail-addr" id="detailAddr"></p>
+    <div class="detail-saldo-box">
+      <div class="label">Saldo devedor</div>
+      <div class="value" id="detailSaldo">R$ 0,00</div>
+    </div>
+  </div>
+  <div class="detail-actions">
+    <button class="btn btn-danger" id="btnNovaCompra">+ Compra</button>
+    <button class="btn btn-good" id="btnNovoPagamento">+ Pagamento</button>
+  </div>
+  <div class="detail-list">
+    <div class="section-title">Histórico</div>
+    <div id="movList"></div>
+    <div id="movEmpty" class="empty" style="display:none; margin-top:20px;">
+      Nenhuma movimentação ainda.
+    </div>
+    <div class="sheet-actions" style="margin-top:24px;">
+      <button class="btn btn-secondary" id="btnEditClient">Editar cliente</button>
+      <button class="btn btn-danger" id="btnDeleteClient">Excluir cliente</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CLIENTS_KEY = 'loja_fiado_clientes_v1';
+const MOVS_KEY = 'loja_fiado_movimentos_v1';
+
+function loadClients() {
+  try { return JSON.parse(localStorage.getItem(CLIENTS_KEY)) || []; }
+  catch (e) { return []; }
+}
+function saveClients(v) { localStorage.setItem(CLIENTS_KEY, JSON.stringify(v)); }
+
+function loadMovs() {
+  try { return JSON.parse(localStorage.getItem(MOVS_KEY)) || []; }
+  catch (e) { return []; }
+}
+function saveMovs(v) { localStorage.setItem(MOVS_KEY, JSON.stringify(v)); }
+
+let clients = loadClients();
+let movs = loadMovs();
+let searchTerm = '';
+let editingClientId = null;
+let currentClientId = null;
+let currentMovTipo = 'compra';
+
+const listEl = document.getElementById('list');
+const emptyEl = document.getElementById('empty');
+const totalReceberEl = document.getElementById('totalReceber');
+const searchEl = document.getElementById('search');
+
+const backdropClient = document.getElementById('backdropClient');
+const fNome = document.getElementById('fNome');
+const fEndereco = document.getElementById('fEndereco');
+const fTelefone = document.getElementById('fTelefone');
+const clientSheetTitle = document.getElementById('clientSheetTitle');
+
+const backdropMov = document.getElementById('backdropMov');
+const fMovData = document.getElementById('fMovData');
+const fMovValor = document.getElementById('fMovValor');
+const movSheetTitle = document.getElementById('movSheetTitle');
+
+const detailOverlay = document.getElementById('detailOverlay');
+const detailName = document.getElementById('detailName');
+const detailAddr = document.getElementById('detailAddr');
+const detailSaldo = document.getElementById('detailSaldo');
+const movList = document.getElementById('movList');
+const movEmpty = document.getElementById('movEmpty');
+
+function formatMoney(v) {
+  const n = Number(v || 0);
+  const sign = n < 0 ? '-' : '';
+  return sign + 'R$ ' + Math.abs(n).toFixed(2).replace('.', ',');
+}
+function formatDateBR(iso) {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function todayISO() {
+  const now = new Date();
+  const tz = now.getTimezoneOffset() * 60000;
+  return new Date(now - tz).toISOString().slice(0, 10);
+}
+
+function saldoDoCliente(clienteId) {
+  return movs
+    .filter(m => m.clienteId === clienteId)
+    .reduce((s, m) => s + (m.tipo === 'compra' ? m.valor : -m.valor), 0);
+}
+
+function renderList() {
+  const term = searchTerm.trim().toLowerCase();
+  const filtered = clients
+    .filter(c => !term || c.nome.toLowerCase().includes(term))
+    .map(c => ({ ...c, saldo: saldoDoCliente(c.id) }))
+    .sort((a, b) => b.saldo - a.saldo);
+
+  listEl.innerHTML = '';
+  emptyEl.style.display = filtered.length ? 'none' : 'block';
+
+  const totalReceber = clients.reduce((s, c) => s + Math.max(saldoDoCliente(c.id), 0), 0);
+  totalReceberEl.textContent = formatMoney(totalReceber);
+
+  filtered.forEach(c => {
+    const saldoClass = c.saldo > 0 ? 'devendo' : 'zero';
+    const div = document.createElement('div');
+    div.className = 'client';
+    div.innerHTML = `
+      <div class="client-info">
+        <p class="client-name">${c.nome}</p>
+        <p class="client-addr">${c.endereco || ''}</p>
+      </div>
+      <span class="client-saldo ${saldoClass}">${formatMoney(c.saldo)}</span>
+    `;
+    div.addEventListener('click', () => openDetail(c.id));
+    listEl.appendChild(div);
+  });
+}
+
+// --- Add/edit client ---
+function openClientSheet(id) {
+  editingClientId = id || null;
+  if (editingClientId) {
+    const c = clients.find(x => x.id === editingClientId);
+    clientSheetTitle.textContent = 'Editar cliente';
+    fNome.value = c.nome;
+    fEndereco.value = c.endereco || '';
+    fTelefone.value = c.telefone || '';
+  } else {
+    clientSheetTitle.textContent = 'Novo cliente';
+    fNome.value = '';
+    fEndereco.value = '';
+    fTelefone.value = '';
+  }
+  backdropClient.classList.add('open');
+  setTimeout(() => fNome.focus(), 200);
+}
+function closeClientSheet() {
+  backdropClient.classList.remove('open');
+  editingClientId = null;
+}
+function saveClient() {
+  const nome = fNome.value.trim();
+  if (!nome) { fNome.focus(); return; }
+  const data = {
+    nome,
+    endereco: fEndereco.value.trim(),
+    telefone: fTelefone.value.trim(),
+  };
+  if (editingClientId) {
+    const idx = clients.findIndex(c => c.id === editingClientId);
+    clients[idx] = { ...clients[idx], ...data };
+  } else {
+    clients.push({ id: Date.now().toString(36), ...data });
+  }
+  saveClients(clients);
+  closeClientSheet();
+  renderList();
+  if (currentClientId) renderDetail();
+}
+
+// --- Client detail ---
+function openDetail(clientId) {
+  currentClientId = clientId;
+  renderDetail();
+  detailOverlay.classList.add('open');
+}
+function closeDetail() {
+  detailOverlay.classList.remove('open');
+  currentClientId = null;
+  renderList();
+}
+function renderDetail() {
+  const c = clients.find(x => x.id === currentClientId);
+  if (!c) { closeDetail(); return; }
+  const saldo = saldoDoCliente(c.id);
+  detailName.textContent = c.nome;
+  detailAddr.textContent = c.endereco || 'Sem endereço cadastrado';
+  detailSaldo.textContent = formatMoney(saldo);
+
+  const clientMovs = movs
+    .filter(m => m.clienteId === c.id)
+    .sort((a, b) => b.data.localeCompare(a.data));
+
+  movList.innerHTML = '';
+  movEmpty.style.display = clientMovs.length ? 'none' : 'block';
+  clientMovs.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'mov';
+    div.innerHTML = `
+      <div class="mov-info">
+        <div class="mov-tipo">${m.tipo === 'compra' ? 'Compra fiado' : 'Pagamento'}</div>
+        <div class="mov-data">${formatDateBR(m.data)}</div>
+      </div>
+      <span class="mov-valor ${m.tipo}">${m.tipo === 'compra' ? '+' : '-'} ${formatMoney(m.valor)}</span>
+      <button class="mov-del" data-del="${m.id}">✕</button>
+    `;
+    div.querySelector('[data-del]').addEventListener('click', () => deleteMov(m.id));
+    movList.appendChild(div);
+  });
+}
+
+// --- Add movement ---
+function openMovSheet(tipo) {
+  currentMovTipo = tipo;
+  movSheetTitle.textContent = tipo === 'compra' ? 'Lançar compra fiado' : 'Lançar pagamento';
+  fMovData.value = todayISO();
+  fMovValor.value = '';
+  backdropMov.classList.add('open');
+}
+function closeMovSheet() {
+  backdropMov.classList.remove('open');
+}
+function saveMov() {
+  const valor = parseFloat(fMovValor.value);
+  if (!valor || valor <= 0 || !fMovData.value) {
+    fMovValor.focus();
+    return;
+  }
+  movs.push({
+    id: Date.now().toString(36),
+    clienteId: currentClientId,
+    tipo: currentMovTipo,
+    data: fMovData.value,
+    valor,
+  });
+  saveMovs(movs);
+  closeMovSheet();
+  renderDetail();
+}
+function deleteMov(id) {
+  if (!confirm('Excluir esta movimentação?')) return;
+  movs = movs.filter(m => m.id !== id);
+  saveMovs(movs);
+  renderDetail();
+}
+function deleteClient() {
+  if (!confirm('Excluir este cliente e todo o histórico dele?')) return;
+  const id = currentClientId;
+  clients = clients.filter(c => c.id !== id);
+  movs = movs.filter(m => m.clienteId !== id);
+  saveClients(clients);
+  saveMovs(movs);
+  closeDetail();
+}
+
+document.getElementById('btnAdd').addEventListener('click', () => openClientSheet(null));
+document.getElementById('btnCancelClient').addEventListener('click', closeClientSheet);
+document.getElementById('btnSaveClient').addEventListener('click', saveClient);
+backdropClient.addEventListener('click', (e) => { if (e.target === backdropClient) closeClientSheet(); });
+
+document.getElementById('btnCancelMov').addEventListener('click', closeMovSheet);
+document.getElementById('btnSaveMov').addEventListener('click', saveMov);
+backdropMov.addEventListener('click', (e) => { if (e.target === backdropMov) closeMovSheet(); });
+
+document.getElementById('btnBack').addEventListener('click', closeDetail);
+document.getElementById('btnNovaCompra').addEventListener('click', () => openMovSheet('compra'));
+document.getElementById('btnNovoPagamento').addEventListener('click', () => openMovSheet('pagamento'));
+document.getElementById('btnEditClient').addEventListener('click', () => openClientSheet(currentClientId));
+document.getElementById('btnDeleteClient').addEventListener('click', deleteClient);
+
+searchEl.addEventListener('input', (e) => {
+  searchTerm = e.target.value;
+  renderList();
+});
+
+renderList();
+</script>
+</body>
+</html>
