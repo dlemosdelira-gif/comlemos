@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Controle da Loja</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1c1e21;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --good: #16a34a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--primary);
+    color: white;
+    padding: 16px 20px;
+  }
+  header h1 {
+    margin: 0 0 12px 0;
+    font-size: 22px;
+  }
+  .search-row {
+    display: flex;
+    gap: 10px;
+  }
+  .search-row input {
+    flex: 1;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: none;
+    font-size: 17px;
+  }
+  .search-row button {
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: none;
+    background: white;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 17px;
+  }
+  .cats {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 12px 16px 0 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cats::-webkit-scrollbar { display: none; }
+  .cat-chip {
+    flex: none;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .cat-chip.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  main {
+    padding: 16px;
+    padding-bottom: 100px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    margin-top: 60px;
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  .product {
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .product-info { flex: 1; min-width: 0; }
+  .product-name {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .product-cat {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+  }
+  .product-prices {
+    display: flex;
+    gap: 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .product-prices b {
+    color: var(--text);
+    font-size: 15px;
+  }
+  .margin {
+    font-weight: 700;
+  }
+  .margin.good { color: var(--good); }
+  .margin.low { color: var(--danger); }
+  .product-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .icon-btn {
+    border: none;
+    background: var(--bg);
+    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fab {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-size: 30px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .sheet-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 30;
+  }
+  .sheet-backdrop.open { display: block; }
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    max-width: 720px;
+    margin: 0 auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.2s ease-out;
+    z-index: 31;
+  }
+  .sheet-backdrop.open .sheet {
+    transform: translateY(0);
+  }
+  .sheet h2 {
+    margin-top: 0;
+    font-size: 20px;
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 14px;
+    font-size: 17px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .row-2 {
+    display: flex;
+    gap: 12px;
+  }
+  .row-2 .field { flex: 1; }
+  .margin-preview {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+  .sheet-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .btn {
+    flex: 1;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-secondary { background: var(--bg); color: var(--text); }
+  .btn-danger { background: #fee2e2; color: var(--danger); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Produtos &amp; Preços</h1>
+  <div class="search-row">
+    <input id="search" type="text" placeholder="Buscar produto..." autocomplete="off">
+  </div>
+  <div class="cats" id="cats"></div>
+</header>
+
+<main>
+  <div id="list"></div>
+  <div id="empty" class="empty" style="display:none">
+    Nenhum produto encontrado.<br>Toque no botão + para cadastrar.
+  </div>
+</main>
+
+<button class="fab" id="btnAdd">+</button>
+
+<div class="sheet-backdrop" id="backdrop">
+  <div class="sheet">
+    <h2 id="sheetTitle">Novo produto</h2>
+    <div class="field">
+      <label>Nome do produto</label>
+      <input id="fName" type="text" placeholder="Ex: Coca cola lata">
+    </div>
+    <div class="field">
+      <label>Categoria</label>
+      <select id="fCat"></select>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Preço de custo (R$)</label>
+        <input id="fCusto" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Preço de venda (R$)</label>
+        <input id="fVenda" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+      </div>
+    </div>
+    <div class="margin-preview" id="marginPreview">Margem: —</div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="btnCancel">Cancelar</button>
+      <button class="btn btn-primary" id="btnSave">Salvar</button>
+    </div>
+    <div class="sheet-actions" id="deleteRow" style="display:none">
+      <button class="btn btn-danger" id="btnDelete">Excluir produto</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'loja_produtos_v1';
+const CATEGORIES = ['Bebidas', 'Doces', 'Salgados', 'Cigarros', 'Mercearia', 'Outros'];
+
+function loadProducts() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveProducts(products) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+}
+
+let products = loadProducts();
+let activeCategory = 'Todas';
+let searchTerm = '';
+let editingId = null;
+
+const catsEl = document.getElementById('cats');
+const listEl = document.getElementById('list');
+const emptyEl = document.getElementById('empty');
+const searchEl = document.getElementById('search');
+const backdrop = document.getElementById('backdrop');
+const fName = document.getElementById('fName');
+const fCat = document.getElementById('fCat');
+const fCusto = document.getElementById('fCusto');
+const fVenda = document.getElementById('fVenda');
+const marginPreview = document.getElementById('marginPreview');
+const sheetTitle = document.getElementById('sheetTitle');
+const deleteRow = document.getElementById('deleteRow');
+
+function renderCategoryChips() {
+  const all = ['Todas', ...CATEGORIES];
+  catsEl.innerHTML = all.map(cat =>
+    `<button class="cat-chip ${cat === activeCategory ? 'active' : ''}" data-cat="${cat}">${cat}</button>`
+  ).join('');
+  catsEl.querySelectorAll('.cat-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeCategory = btn.dataset.cat;
+      renderCategoryChips();
+      renderList();
+    });
+  });
+}
+
+function fillCategorySelect() {
+  fCat.innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function formatMoney(v) {
+  return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+}
+
+function computeMargin(custo, venda) {
+  custo = Number(custo) || 0;
+  venda = Number(venda) || 0;
+  if (custo <= 0 || venda <= 0) return null;
+  const diff = venda - custo;
+  const pct = (diff / custo) * 100;
+  return { diff, pct };
+}
+
+function renderList() {
+  const term = searchTerm.trim().toLowerCase();
+  const filtered = products
+    .filter(p => activeCategory === 'Todas' || p.categoria === activeCategory)
+    .filter(p => !term || p.nome.toLowerCase().includes(term))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  listEl.innerHTML = '';
+  emptyEl.style.display = filtered.length ? 'none' : 'block';
+
+  filtered.forEach(p => {
+    const m = computeMargin(p.custo, p.venda);
+    const marginHtml = m
+      ? `<span class="margin ${m.pct >= 25 ? 'good' : 'low'}">${m.pct.toFixed(0)}%</span>`
+      : '<span class="margin">—</span>';
+
+    const div = document.createElement('div');
+    div.className = 'product';
+    div.innerHTML = `
+      <div class="product-info">
+        <span class="product-cat">${p.categoria}</span>
+        <p class="product-name">${p.nome}</p>
+        <div class="product-prices">
+          <span>Custo <b>${formatMoney(p.custo)}</b></span>
+          <span>Venda <b>${formatMoney(p.venda)}</b></span>
+          ${marginHtml}
+        </div>
+      </div>
+      <div class="product-actions">
+        <button class="icon-btn" data-edit="${p.id}">✎</button>
+      </div>
+    `;
+    div.querySelector('[data-edit]').addEventListener('click', () => openSheet(p.id));
+    listEl.appendChild(div);
+  });
+}
+
+function updateMarginPreview() {
+  const m = computeMargin(fCusto.value, fVenda.value);
+  if (!m) {
+    marginPreview.textContent = 'Margem: —';
+    return;
+  }
+  marginPreview.textContent =
+    `Margem: ${formatMoney(m.diff)} (${m.pct.toFixed(1)}%)`;
+}
+
+function openSheet(id) {
+  editingId = id || null;
+  if (editingId) {
+    const p = products.find(x => x.id === editingId);
+    sheetTitle.textContent = 'Editar produto';
+    fName.value = p.nome;
+    fCat.value = p.categoria;
+    fCusto.value = p.custo;
+    fVenda.value = p.venda;
+    deleteRow.style.display = 'flex';
+  } else {
+    sheetTitle.textContent = 'Novo produto';
+    fName.value = '';
+    fCat.value = CATEGORIES[0];
+    fCusto.value = '';
+    fVenda.value = '';
+    deleteRow.style.display = 'none';
+  }
+  updateMarginPreview();
+  backdrop.classList.add('open');
+  setTimeout(() => fName.focus(), 200);
+}
+
+function closeSheet() {
+  backdrop.classList.remove('open');
+  editingId = null;
+}
+
+function saveProduct() {
+  const nome = fName.value.trim();
+  if (!nome) {
+    fName.focus();
+    return;
+  }
+  const data = {
+    nome,
+    categoria: fCat.value,
+    custo: parseFloat(fCusto.value) || 0,
+    venda: parseFloat(fVenda.value) || 0,
+  };
+  if (editingId) {
+    const idx = products.findIndex(p => p.id === editingId);
+    products[idx] = { ...products[idx], ...data };
+  } else {
+    products.push({ id: Date.now().toString(36), ...data });
+  }
+  saveProducts(products);
+  closeSheet();
+  renderList();
+}
+
+function deleteProduct() {
+  if (!editingId) return;
+  if (!confirm('Excluir este produto?')) return;
+  products = products.filter(p => p.id !== editingId);
+  saveProducts(products);
+  closeSheet();
+  renderList();
+}
+
+document.getElementById('btnAdd').addEventListener('click', () => openSheet(null));
+document.getElementById('btnCancel').addEventListener('click', closeSheet);
+document.getElementById('btnSave').addEventListener('click', saveProduct);
+document.getElementById('btnDelete').addEventListener('click', deleteProduct);
+backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeSheet(); });
+fCusto.addEventListener('input', updateMarginPreview);
+fVenda.addEventListener('input', updateMarginPreview);
+searchEl.addEventListener('input', (e) => {
+  searchTerm = e.target.value;
+  renderList();
+});
+
+fillCategorySelect();
+renderCategoryChips();
+renderList();
+</script>
+</body>
+</html>
