@@ -37,7 +37,20 @@ Para usar, basta abrir `index.html`, `caixa.html` ou `fiado.html` no navegador (
 
 Todos os dados (produtos, caixa, fiado) ficam salvos no Firestore do projeto `comlemos-66e5f`, então qualquer alteração feita em um aparelho aparece automaticamente nos outros que tiverem o link aberto — não precisa recarregar a página.
 
-As chaves de configuração ficam em `firebase-config.js` e são públicas por natureza (chave de identificação do app web, não uma senha). O acesso ao banco está em **modo de teste** (aberto, sem login), por escolha, já que o app não tem tela de login — qualquer pessoa com o link consegue ler e editar os dados. O modo de teste do Firestore expira automaticamente em ~30 dias; quando isso acontecer, será preciso voltar ao console do Firebase (Firestore → Regras) e definir regras permanentes (abertas ou, futuramente, com login).
+As chaves de configuração ficam em `firebase-config.js` e são públicas por natureza (chave de identificação do app web, não uma senha). O acesso ao banco está **aberto de forma permanente** (sem login, sem data de expiração), por escolha, já que o app não tem tela de login — qualquer pessoa com o link consegue ler e editar os dados. As regras publicadas no Firestore são:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+Se um dia quiser restringir o acesso, é possível adicionar login simples (nome + senha), do jeito que foi feito no app de orçamento pessoal.
 
 ## Próximos módulos planejados
 
