@@ -277,21 +277,21 @@
     <div class="row-2">
       <div class="field">
         <label>Venda na loja (R$)</label>
-        <input id="fVendaLoja" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+        <input id="fVendaLoja" type="text" inputmode="decimal" placeholder="0,00">
       </div>
       <div class="field">
         <label>Venda na rua/entregas (R$)</label>
-        <input id="fVendaRua" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+        <input id="fVendaRua" type="text" inputmode="decimal" placeholder="0,00">
       </div>
     </div>
     <div class="row-2">
       <div class="field">
         <label>Retiradas (R$)</label>
-        <input id="fRetiradas" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+        <input id="fRetiradas" type="text" inputmode="decimal" placeholder="0,00">
       </div>
       <div class="field">
         <label>Despesas (R$)</label>
-        <input id="fDespesas" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+        <input id="fDespesas" type="text" inputmode="decimal" placeholder="0,00">
       </div>
     </div>
     <div class="result-preview" id="resultPreview">Resultado do dia: —</div>
@@ -330,7 +330,17 @@ const deleteRow = document.getElementById('deleteRow');
 function formatMoney(v) {
   const n = Number(v || 0);
   const sign = n < 0 ? '-' : '';
-  return sign + 'R$ ' + Math.abs(n).toFixed(2).replace('.', ',');
+  return sign + 'R$ ' + Math.abs(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function parseMoney(str) {
+  if (!str) return 0;
+  str = String(str).trim();
+  const lastSep = Math.max(str.lastIndexOf(','), str.lastIndexOf('.'));
+  if (lastSep === -1) return parseFloat(str) || 0;
+  const intPart = str.slice(0, lastSep).replace(/[.,]/g, '');
+  const decPart = str.slice(lastSep + 1).replace(/[^0-9]/g, '');
+  return parseFloat(intPart + '.' + decPart) || 0;
 }
 
 function formatDateBR(iso) {
@@ -405,10 +415,10 @@ function render() {
 
 function updateResultPreview() {
   const result = computeResult({
-    vendaLoja: fVendaLoja.value,
-    vendaRua: fVendaRua.value,
-    retiradas: fRetiradas.value,
-    despesas: fDespesas.value,
+    vendaLoja: parseMoney(fVendaLoja.value),
+    vendaRua: parseMoney(fVendaRua.value),
+    retiradas: parseMoney(fRetiradas.value),
+    despesas: parseMoney(fDespesas.value),
   });
   resultPreview.textContent = `Resultado do dia: ${formatMoney(result)}`;
 }
@@ -455,10 +465,10 @@ function saveDay() {
   }
   const data = {
     data: fData.value,
-    vendaLoja: parseFloat(fVendaLoja.value) || 0,
-    vendaRua: parseFloat(fVendaRua.value) || 0,
-    retiradas: parseFloat(fRetiradas.value) || 0,
-    despesas: parseFloat(fDespesas.value) || 0,
+    vendaLoja: parseMoney(fVendaLoja.value),
+    vendaRua: parseMoney(fVendaRua.value),
+    retiradas: parseMoney(fRetiradas.value),
+    despesas: parseMoney(fDespesas.value),
   };
   const newId = data.data;
   if (!editingId) {

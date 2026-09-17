@@ -421,7 +421,7 @@
     </div>
     <div class="field">
       <label>Valor (R$)</label>
-      <input id="fMovValor" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+      <input id="fMovValor" type="text" inputmode="decimal" placeholder="0,00">
     </div>
     <div class="sheet-actions">
       <button class="btn btn-secondary" id="btnCancelMov">Cancelar</button>
@@ -498,7 +498,16 @@ const movEmpty = document.getElementById('movEmpty');
 function formatMoney(v) {
   const n = Number(v || 0);
   const sign = n < 0 ? '-' : '';
-  return sign + 'R$ ' + Math.abs(n).toFixed(2).replace('.', ',');
+  return sign + 'R$ ' + Math.abs(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function parseMoney(str) {
+  if (!str) return 0;
+  str = String(str).trim();
+  const lastSep = Math.max(str.lastIndexOf(','), str.lastIndexOf('.'));
+  if (lastSep === -1) return parseFloat(str) || 0;
+  const intPart = str.slice(0, lastSep).replace(/[.,]/g, '');
+  const decPart = str.slice(lastSep + 1).replace(/[^0-9]/g, '');
+  return parseFloat(intPart + '.' + decPart) || 0;
 }
 function formatDateBR(iso) {
   const [y, m, d] = iso.split('-');
@@ -656,7 +665,7 @@ function closeMovSheet() {
   backdropMov.classList.remove('open');
 }
 function saveMov() {
-  const valor = parseFloat(fMovValor.value);
+  const valor = parseMoney(fMovValor.value);
   if (!valor || valor <= 0 || !fMovData.value) {
     fMovValor.focus();
     return;

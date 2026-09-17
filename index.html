@@ -325,11 +325,11 @@
     <div class="row-2">
       <div class="field">
         <label>Preço de custo (R$)</label>
-        <input id="fCusto" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+        <input id="fCusto" type="text" inputmode="decimal" placeholder="0,00">
       </div>
       <div class="field">
         <label>Preço de venda (R$)</label>
-        <input id="fVenda" type="number" step="0.01" inputmode="decimal" placeholder="0,00">
+        <input id="fVenda" type="text" inputmode="decimal" placeholder="0,00">
       </div>
     </div>
     <div class="margin-preview" id="marginPreview">Margem: —</div>
@@ -387,7 +387,17 @@ function fillCategorySelect() {
 }
 
 function formatMoney(v) {
-  return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+  return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function parseMoney(str) {
+  if (!str) return 0;
+  str = String(str).trim();
+  const lastSep = Math.max(str.lastIndexOf(','), str.lastIndexOf('.'));
+  if (lastSep === -1) return parseFloat(str) || 0;
+  const intPart = str.slice(0, lastSep).replace(/[.,]/g, '');
+  const decPart = str.slice(lastSep + 1).replace(/[^0-9]/g, '');
+  return parseFloat(intPart + '.' + decPart) || 0;
 }
 
 function computeMargin(custo, venda) {
@@ -437,7 +447,7 @@ function renderList() {
 }
 
 function updateMarginPreview() {
-  const m = computeMargin(fCusto.value, fVenda.value);
+  const m = computeMargin(parseMoney(fCusto.value), parseMoney(fVenda.value));
   if (!m) {
     marginPreview.textContent = 'Lucro: — · Margem: —';
     return;
@@ -483,8 +493,8 @@ function saveProduct() {
   const data = {
     nome,
     categoria: fCat.value,
-    custo: parseFloat(fCusto.value) || 0,
-    venda: parseFloat(fVenda.value) || 0,
+    custo: parseMoney(fCusto.value),
+    venda: parseMoney(fVenda.value),
   };
   if (editingId) {
     productsCol.doc(editingId).set(data);
