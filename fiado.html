@@ -193,7 +193,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.4);
-    z-index: 30;
+    z-index: 50;
   }
   .sheet-backdrop.open { display: block; }
   .sheet {
@@ -210,7 +210,7 @@
     overflow-y: auto;
     transform: translateY(100%);
     transition: transform 0.2s ease-out;
-    z-index: 31;
+    z-index: 51;
   }
   .sheet-backdrop.open .sheet {
     transform: translateY(0);
@@ -252,6 +252,12 @@
   .btn-secondary { background: var(--bg); color: var(--text); }
   .btn-danger { background: #fee2e2; color: var(--danger); }
   .btn-good { background: #dcfce7; color: var(--good); }
+  .btn-whatsapp { background: #25D366; color: white; }
+  .whatsapp-row {
+    padding: 0 16px 16px 16px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
 
   /* Client detail overlay */
   .detail-overlay {
@@ -445,6 +451,9 @@
     <button class="btn btn-danger" id="btnNovaCompra">+ Valor a receber</button>
     <button class="btn btn-good" id="btnNovoPagamento">+ Pagamento recebido</button>
   </div>
+  <div class="whatsapp-row" id="whatsappRow" style="display:none">
+    <button class="btn btn-whatsapp" id="btnWhatsapp">💬 Chamar no WhatsApp</button>
+  </div>
   <div class="detail-list">
     <div class="section-title">Histórico</div>
     <div id="movList"></div>
@@ -494,6 +503,8 @@ const detailAddr = document.getElementById('detailAddr');
 const detailSaldo = document.getElementById('detailSaldo');
 const movList = document.getElementById('movList');
 const movEmpty = document.getElementById('movEmpty');
+const whatsappRow = document.getElementById('whatsappRow');
+const btnWhatsapp = document.getElementById('btnWhatsapp');
 
 function formatMoney(v) {
   const n = Number(v || 0);
@@ -625,6 +636,18 @@ function renderDetail() {
   detailName.textContent = c.nome;
   detailAddr.textContent = c.endereco || 'Sem endereço cadastrado';
   detailSaldo.textContent = formatMoney(saldo);
+
+  if (c.telefone && c.telefone.replace(/\D/g, '').length >= 8) {
+    whatsappRow.style.display = 'block';
+    btnWhatsapp.onclick = () => {
+      let digits = c.telefone.replace(/\D/g, '');
+      if (digits.length <= 11) digits = '55' + digits;
+      const msg = encodeURIComponent(`Olá, ${c.nome}! Tudo bem?`);
+      window.open(`https://wa.me/${digits}?text=${msg}`, '_blank');
+    };
+  } else {
+    whatsappRow.style.display = 'none';
+  }
 
   const clientMovs = movs
     .filter(m => m.clienteId === c.id)
